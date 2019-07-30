@@ -1,0 +1,23 @@
+# Default values for federatorai-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## Set default image, imageTag, and imagePullPolicy. mode is used to indicate the
+##
+image:
+  pullPolicy: IfNotPresent
+  repository: quay.io/prophetstor/federatorai-operator-ubi
+  tag: v4.1.107
+
+## Set default values
+##
+alameda:
+  version: v4.1.113
+  ## NKS trusted-helm prometheus exposes as http://pk8s.monitoring:9090
+  prometheusService: http://pk8s.monitoring:9090
+  ## OpenShift prometheus exposes as https://prometheus-k8s.openshift-monitoring:9091
+  # https://prometheus-k8s.openshift-monitoring:9091
+
+prometheus:
+  ## Deploy built-in prometheus chart
+  enabled: true
