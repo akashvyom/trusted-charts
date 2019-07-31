@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Chart.Name }}-data
+  labels:
+    zone: secure
+    app.kubernetes.io/name: {{ .Chart.Name }}-data
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    zone: secure
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        zone: secure
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ template "consul_image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - vmt-server
+        - -client=0.0.0.0
+        - -ui
+        env:
+        - name: CONSUL_BIND_INTERFACE
+          value: eth0
+        readinessProbe:
+          httpGet:
+            port: 8500
+            path: /ui/
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /consul/data
+          name: consuldata
+        - mountPath: /tmp
+          name: consul-tmpfs0
+{{- if .Values.global }}
+  {{- if and .Values.global.registry .Values.global.imageUsername .Values.global.imagePassword }}
+      imagePullSecrets:
+      - name: turbocred
+  {{- end -}}
+{{- end }}
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 2000
+      volumes:
+      - name: consuldata
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-data
+      - name: consul-tmpfs0
+        emptyDir: {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    zone: secure
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  ports:
+  # the port that this service should serve on
+  - name: http-consul
+    port: 8500
+  - name: rpc-consul
+    port: 8400
+  - name: tcp-serflan
+    port: 8301
+  - name: tcp-serfwan
+    port: 8302
+  - name: tcp-server
+    port: 8300
+  - name: udp-consuldns
+    port: 8600
+  selector:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
