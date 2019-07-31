@@ -1,0 +1,24 @@
+apiVersion: federatorai.containers.ai/v1alpha1
+kind: AlamedaService
+metadata:
+  name: my-alamedaservice
+  namespace: federatorai
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook-weight": "50"
+spec:
+  enableExecution: true
+  enableGui: true
+  enableFedemeter: true
+  version: {{ .Values.alameda.version }}
+{{- if .Values.prometheus.enabled }}
+  prometheusService: http://prometheus-operated.{{ .Release.Namespace }}:9090
+{{- else -}}
+  prometheusService: {{ .Values.alameda.prometheusService }}
+{{- end }}
+  storages:
+    - usage: log
+      type: ephemeral
+    - usage: data
+      type: ephemeral

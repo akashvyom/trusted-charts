@@ -1,0 +1,26 @@
+# Default values for db.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: turbonomic
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  - name: DB_MEM_PCT_FOR_BUFFER_POOL
+    value: "80"
+
+resources:
+  limits:
+    memory: 4Gi
+  requests:
+    memory: 1Gi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

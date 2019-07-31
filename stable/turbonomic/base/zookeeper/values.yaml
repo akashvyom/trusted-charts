@@ -1,0 +1,28 @@
+# Default values for zookeeper.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: turbonomic
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  - name: ZOO_MY_ID
+    value: "1"
+  - name: ZOO_SERVERS
+    value: zoo
+
+resources:
+  limits:
+    memory: 1Gi
+  requests:
+    memory: 384Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

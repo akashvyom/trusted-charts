@@ -1,26 +1,57 @@
 # Default values for kubeturbo.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
 
-kubeturbo:
-  image:
-    repository: vmturbo/kubeturbo
-    tag: "6.0"
-  replicaCount: 1
+# Replace the image with desired version
+image:
+  repository: turbonomic/kubeturbo
+  tag: 6.3
+  pullPolicy: IfNotPresent
 
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
+#nameOverride: ""
+#fullnameOverride: ""
 
-kubeconfig:
-  secretName: kubeconfig
+# Specify custom turbo-cluster-reader or turbo-cluster-admin role instead of the default cluster-admin role
+roleName: "cluster-admin"
 
-vmturboconfig:
-  secretName: vmturboconfig
-  turbonomic_server_api_version: ""
-  turbonomic_url: ""
-  turbonomic_user: ""
-  turbonomic_password: ""
-  instance_id: ""
+# Turbo server version and address
+serverMeta:
+  version: TURBONOMIC_SERVER_VERSION
+  turboServer: https://Turbo_server_URL
+
+# Turbo server api user and password
+# The opsManagerUserName requires Turbo administrator role
+restAPIConfig:
+  opsManagerUserName: Turbo_username
+  opsManagerPassword: Turbo_password
+
+# Enabling targetConfig and providing a value will give a name to your cluster
+#targetConfig:
+#  targetName: Name_Each_Cluster
+
+# In kubeturbo 6.3+, you can define how master nodes are identified. Use either or both
+# Master nodes are not identified by default and could suspend in plans.
+# nodeLabels must provide a key value pair
+masterNodeDetectors:
+   nodeNamePatterns: .*master.*
+   nodeLabelsKey: node-role.kubernetes.io/master
+   nodeLabelsValue: .*
+
+# In kubeturbo 6.3+, you can define how daemon pods are identified. Use either or both
+# Note if you do not enable daemonPodDetectors, the default is to identify all pods running as kind = daemonSet
+# Any entry for daemonPodDetectors would overwrite default. Recommend you do not use this parameter.
+#daemonPodDetectors:
+#   daemonPodNamespaces1: kube-system
+#   daemonPodNamespaces2: OpenShift
+#   daemonPodNamePatterns: .*ignorePod.*
+
+args:
+  # logging level
+  logginglevel: 2
+  # If running on k8s 1.10.x or older, set https to false and change port 10255 for kubelet
+  kubelethttps: true
+  kubeletport: 10250
+  # set to false if using IP for stitching
+  stitchuuid: true
+  # if Kubernetes version is older than 1.6, then add another arg for move/resize action
+  pre16k8sVersion: false

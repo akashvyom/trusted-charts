@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Chart.Name }}-data
+  labels:
+    zone: internal
+    app.kubernetes.io/name: {{ .Chart.Name }}-data
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    zone: internal
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        zone: internal
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ template "image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+{{ toYaml .Values.env | indent 8 -}}
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - "/zookeeper-ready"
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /var/lib/zoo
+          name: zookeeper-data
+        - mountPath: /tmp
+          name: zookeeper-tmpfs0
+{{- if .Values.global }}
+  {{- if and .Values.global.registry .Values.global.imageUsername .Values.global.imagePassword }}
+      imagePullSecrets:
+      - name: turbocred
+  {{- end -}}
+{{- end }}
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 2000
+      volumes:
+      - name: zookeeper-data
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-data
+      - name: zookeeper-tmpfs0
+        emptyDir: {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    zone: internal
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  ports:
+  - name: tcp-zookeeper
+    port: 2181
+  selector:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}

@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    zone: secure
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 128Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Chart.Name }}-dump
+  labels:
+    zone: secure
+    app.kubernetes.io/name: {{ .Chart.Name }}-dump
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    zone: secure
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  name: {{ .Chart.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        zone: secure
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ template "image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+{{ toYaml .Values.env | indent 8 -}}
+        readinessProbe:
+          tcpSocket:
+            port: 8086
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /var/lib/influxdb
+          name: influxdb
+        - mountPath: /home/influxdb/influxdb-dump
+          name: influxdb-dump
+        - mountPath: /tmp
+          name: influxdb-tmpfs0
+{{- if .Values.global }}
+  {{- if and .Values.global.registry .Values.global.imageUsername .Values.global.imagePassword }}
+      imagePullSecrets:
+      - name: turbocred
+  {{- end -}}
+{{- end }}
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 2000
+      volumes:
+      - name: influxdb
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}
+      - name: influxdb-dump
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-dump
+      - name: influxdb-tmpfs0
+        emptyDir: {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    zone: secure
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  ports:
+  - name: http-influxdb
+    port: 8086
+  - name: rpc-influxdb-dump
+    port: 8088
+  selector:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}

@@ -1,9 +1,6 @@
 requirements:
   ## Set nodes spec
   node: {} # {} if nothing set
-#    count: 3
-#    cpu: 2
-#    ram: 2GB
 
   ## Set app spec
   app:
@@ -14,9 +11,7 @@ requirements:
 
     ## List of required values key names from values.yaml
     valuesEditRequired:
-      - kubeconfig.secretName
-      - vmturboconfig.turbonomic_server_api_version
-      - vmturboconfig.turbonomic_url
-      - vmturboconfig.turbonomic_user
-      - vmturboconfig.turbonomic_password
-      - vmturboconfig.target_address
+      - serverMeta.version
+      - serverMeta.turboServer
+      - restAPIConfig.opsManagerUserName
+      - restAPIConfig.Turbo_password
