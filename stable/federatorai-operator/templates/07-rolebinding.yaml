@@ -5,7 +5,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: federatorai-operator
-  namespace: federatorai
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
   name: federatorai-operator
