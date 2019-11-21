@@ -2,23 +2,38 @@ apiVersion: federatorai.containers.ai/v1alpha1
 kind: AlamedaService
 metadata:
   name: my-alamedaservice
-  namespace: federatorai
+  namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install
-    "helm.sh/hook-delete-policy": before-hook-creation
-    "helm.sh/hook-weight": "50"
+    "helm.sh/hook-weight": "3000"
 spec:
+  keycode:
+    codeNumber: GRV7J-LA4TX-KPPIT-S6GRS-NK4EB-ILFRQ
+  selfDriving: false            ## to enable resource self-orchestration of the deployed Alameda components
+                                ## it is recommended NOT to use ephemeral data storage for Alameda influxdb component when self-Driving is enabled
   enableExecution: true
   enableGui: true
-  enableFedemeter: true
   version: {{ .Values.alameda.version }}
-{{- if .Values.prometheus.enabled }}
-  prometheusService: http://prometheus-operated.{{ .Release.Namespace }}:9090
-{{- else -}}
+{{ if .Values.prometheus.enabled }}
+  prometheusService: http://prometheus-operated.{{ .Release.Namespace }}.svc:9090
+{{ else }}
   prometheusService: {{ .Values.alameda.prometheusService }}
-{{- end }}
-  storages:
-    - usage: log
-      type: ephemeral
+{{ end }}
+  storages:                     ## see following details for where it is used in each component
+    - usage: log                ## storage setting for log
+      type: ephemeral           ## ephemeral means emptyDir{}
     - usage: data
       type: ephemeral
+#    - usage: data               ## storage setting for data
+#      type: pvc                 ## pvc means PersistentVolumeClaim
+#      size: 10Gi                ## mandatory when type=pvc
+#      class: "normal"           ## mandatory when type=pvc
+  serviceExposures:
+{{ if .Values.grafana.nodePort }}
+  - name: alameda-grafana
+    type: NodePort
+    nodePort:
+      ports:
+      - port: 3000
+        nodePort: {{ .Values.grafana.nodePort }}
+{{ end }}

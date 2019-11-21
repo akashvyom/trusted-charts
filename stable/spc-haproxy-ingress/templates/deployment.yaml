@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "fullname" . }}
@@ -15,6 +15,10 @@ spec:
   selector:
     matchLabels:
       app: {{ template "fullname" . }}
+      heritage: {{ .Release.Service | quote }}
+      release: {{ .Release.Name | quote }}
+      chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+      networkpolicy_ingress: controller
   template:
     metadata:
       labels:

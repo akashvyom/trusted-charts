@@ -35,16 +35,16 @@ helm delete `my-name`
 
 ## Configuration
 
-The following table lists the configurable parameters of the chart and their default values.
+The following table lists the configurable parameters of the chart and their default values are specfied insde values.yaml.
 
-| Parameter                               | Description                                   | Default                                   |
-| ----------------------------------------| --------------------------------------------- | ----------------------------------------- |
-| `image.pullPolicy`                      | Container pull policy                         | `IfNotPresent`                            |
-| `image.repository`                      | Image for Federator.ai operator               | `quay.io/prophetstor/federatorai-operator-ubi` |
-| `image.tag`                             | Image Tag for Federator.ai operator           | `4.1.20`                                  |
-| `alameda.version`                       | Image Tag for services                        | `4.1.39`                                  |
-| `alameda.prometheusservice`             | Prometheus service endpoint                   | `http://pk8s.monitoring:9090`             |
-| `prometheus.enabled`                    | Deploy built-in prometheus chart              | `true`                                    |
+| Parameter                               | Description                                   |
+| ----------------------------------------| --------------------------------------------- |
+| `image.pullPolicy`                      | Container pull policy                         |
+| `image.repository`                      | Image for Federator.ai operator               |
+| `image.tag`                             | Image Tag for Federator.ai operator           |
+| `alameda.version`                       | Image Tag for services                        |
+| `alameda.prometheusservice`             | Prometheus service endpoint                   |
+| `prometheus.enabled`                    | Deploy built-in prometheus chart              |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`.
 
